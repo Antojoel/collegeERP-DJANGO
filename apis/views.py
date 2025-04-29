@@ -16,6 +16,8 @@ from rest_framework import status
 from django.db.models import Sum, Count
 from django.conf import settings
 import apis.serializers as api_ser
+from django.utils import timezone  # Import for timezone
+
 
 
 class DetailView(APIView):
@@ -132,6 +134,36 @@ class TimetableView(APIView):
                 serializer = api_ser.TimeTableSerializer(
                     asst, many=True, context={'request': request})     # Serializing the data into Json format.
                 return Response({'user_marks': serializer.data, }, status=status.HTTP_200_OK)
+            else:
+                return Response({'message': 'User not authenticated'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class NotificationsView(APIView):
+    """
+    Returns active notifications for the current date and upcoming dates.
+    """
+    permission_classes = [IsAuthenticated, ]
+
+    def get(self, request):
+        try:
+            token = Token.objects.filter(user=request.user).first()
+            if token:  # checking for authentication using token authentication
+                # Get today's date
+                today = timezone.now().date()
+                
+                # Get active notifications for today and future dates
+                notifications = Notification.objects.filter(
+                    is_active=True,
+                    date__gte=today
+                ).order_by('date')[:5]  # Limit to 5 most recent notifications
+                
+                # Use the correct serializer reference
+                serializer = api_ser.NotificationSerializer(
+                    notifications, many=True, context={'request': request})
+                return Response({'notifications': serializer.data}, status=status.HTTP_200_OK)
             else:
                 return Response({'message': 'User not authenticated'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:

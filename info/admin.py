@@ -8,6 +8,10 @@ from django.urls import path
 from .models import Dept, Class, Student, Attendance, Course, Teacher, Assign, AssignTime, AttendanceClass
 from .models import StudentCourse, Marks, User, AttendanceRange
 
+from .models import Notification
+
+
+
 # Register your models here.
 
 days = {
@@ -131,6 +135,13 @@ class AttendanceClassAdmin(admin.ModelAdmin):
 
         self.message_user(request, "Attendance Dates reset successfully!")
         return HttpResponseRedirect("../")
+    
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('title', 'date', 'is_active')
+    list_filter = ('is_active', 'date')
+    search_fields = ('title', 'message')
+
+admin.site.register(Notification, NotificationAdmin)
 
 
 admin.site.register(User, UserAdmin)

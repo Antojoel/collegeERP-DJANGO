@@ -347,3 +347,16 @@ post_save.connect(create_marks, sender=Assign)
 post_save.connect(create_marks_class, sender=Assign)
 post_save.connect(create_attendance, sender=AssignTime)
 post_delete.connect(delete_marks, sender=Assign)
+
+class Notification(models.Model):
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        ordering = ['-date']
+    
+    def __str__(self):
+        return self.title

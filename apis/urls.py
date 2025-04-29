@@ -8,4 +8,5 @@ urlpatterns = [
     path('attendance/', api_view.AttendanceView.as_view()),
     path('marks/', api_view.MarksView.as_view()),
     path('timetable/', api_view.TimetableView.as_view()),
+    path('notifications/', api_view.NotificationsView.as_view()),  # New endpoint
 ]

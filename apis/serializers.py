@@ -1,7 +1,5 @@
 from rest_framework import serializers
-
 from info.models import *
-
 
 class DetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,3 +23,9 @@ class TimeTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssignTime
         fields = '__all__'
+
+# Add this new serializer
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'title', 'message', 'date']

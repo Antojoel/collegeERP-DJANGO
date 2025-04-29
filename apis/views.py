@@ -145,26 +145,22 @@ class NotificationsView(APIView):
     """
     Returns active notifications for the current date and upcoming dates.
     """
-    permission_classes = [IsAuthenticated, ]
-
+    permission_classes = [AllowAny]  # Change IsAuthenticated to AllowAny
+    
     def get(self, request):
         try:
-            token = Token.objects.filter(user=request.user).first()
-            if token:  # checking for authentication using token authentication
-                # Get today's date
-                today = timezone.now().date()
-                
-                # Get active notifications for today and future dates
-                notifications = Notification.objects.filter(
-                    is_active=True,
-                    date__gte=today
-                ).order_by('date')[:5]  # Limit to 5 most recent notifications
-                
-                # Use the correct serializer reference
-                serializer = api_ser.NotificationSerializer(
-                    notifications, many=True, context={'request': request})
-                return Response({'notifications': serializer.data}, status=status.HTTP_200_OK)
-            else:
-                return Response({'message': 'User not authenticated'}, status=status.HTTP_400_BAD_REQUEST)
+            # Get today's date
+            today = timezone.now().date()
+            
+            # Get active notifications for today and future dates
+            notifications = Notification.objects.filter(
+                is_active=True,
+                date__gte=today
+            ).order_by('date')[:5]  # Limit to 5 most recent notifications
+            
+            # Use the correct serializer reference
+            serializer = api_ser.NotificationSerializer(
+                notifications, many=True, context={'request': request})
+            return Response({'notifications': serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)

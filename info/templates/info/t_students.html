@@ -1,50 +1,297 @@
 {% extends 'info/base.html' %}
-    {% load static %}
+{% load static %}
 
-    {% block content %}
-                  <div class="card mb-3">
-            <div class="card-header">
-              <i class="fas fa-table"></i>
-            <b>Attendance</b></div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                  <thead>
-                    <tr>
-                        <th>USN</th>
-                        <th>Student name</th>
-                        <th>Attended classes</th>
-                        <th>Total classes</th>
-                        <th>Attendance %</th>
-                        <th>Classes to attend</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for a in att_list %}
-                    <tr>
-                        <td>{{ a.student_id }}</td>
-                        <td><a href="{% url 't_attendance_detail' a.student.USN a.course_id %}">{{ a.student.name }}</a></td>
-                        <td>{{ a.att_class }}</td>
-                        <td>{{ a.total_class }}</td>
-                        {% if a.attendance < 75 %}
-                            <td class="p-3 mb-2 bg-danger text-white">{{ a.attendance }}</td>
-                        {% else %}
-                            <td class="p-3 mb-2 bg-success text-white">{{ a.attendance }}</td>
-                        {% endif %}
-                        <td>{{ a.classes_to_attend }}</td>
-                    </tr>
-                    {% empty %}
-                            <p>No students</p>
-                    {% endfor %}
+{% block title %}Student Attendance{% endblock %}
 
-                  </tbody>
-                </table>
-              </div>
-            </div>
+{% block css %}
+<style>
+  .attendance-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    color: white;
+    font-weight: bold;
+    padding: 15px 20px;
+  }
+  
+  .attendance-table {
+    margin-bottom: 0;
+  }
+  
+  .attendance-table th {
+    background-color: #f8f9fc;
+    color: #5a5c69;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  
+  .student-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #4e73df;
+  }
+  
+  .student-name a {
+    color: #4e73df;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  
+  .student-name a:hover {
+    color: #224abe;
+    text-decoration: underline;
+  }
+  
+  .student-usn {
+    font-weight: 500;
+    font-size: 14px;
+    color: #6c757d;
+  }
+  
+  .attendance-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  
+  .attendance-good {
+    background-color: #1cc88a;
+    color: white;
+  }
+  
+  .attendance-bad {
+    background-color: #e74a3b;
+    color: white;
+  }
+  
+  .classes-to-attend {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 13px;
+    background-color: #f8f9fc;
+  }
+  
+  .classes-needed {
+    color: #e74a3b;
+  }
+  
+  .classes-not-needed {
+    color: #1cc88a;
+  }
+  
+  .back-button {
+    margin-bottom: 15px;
+    border-radius: 20px;
+    padding: 5px 15px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #5a5c69;
+  }
+  
+  .empty-state i {
+    font-size: 48px;
+    margin-bottom: 10px;
+    color: #dddfeb;
+  }
+  
+  .attendance-note {
+    background-color: rgba(78, 115, 223, 0.1);
+    border-left: 4px solid #4e73df;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    color: #5a5c69;
+  }
+  
+  .attendance-note i {
+    color: #4e73df;
+    margin-right: 5px;
+  }
+  
+  .summary-section {
+    margin-bottom: 20px;
+  }
+  
+  .summary-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .summary-card {
+    flex: 1;
+    min-width: 200px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .summary-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+  }
+  
+  .icon-students {
+    background-color: #4e73df;
+  }
+  
+  .icon-present {
+    background-color: #1cc88a;
+  }
+  
+  .icon-attendance {
+    background-color: #f6c23e;
+  }
+  
+  .summary-title {
+    font-size: 14px;
+    color: #5a5c69;
+    margin-bottom: 5px;
+  }
+  
+  .summary-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #5a5c69;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <a href="javascript:history.back()" class="btn btn-secondary back-button">
+    <i class="fas fa-arrow-left mr-2"></i>Back to Classes
+  </a>
+  
+  <h1 class="h3 mb-4 text-gray-800">Student Attendance Overview</h1>
+  
+  <div class="attendance-note">
+    <i class="fas fa-info-circle"></i>
+    <span>This page shows attendance statistics for all students in the class. Click on a student's name to view their detailed attendance record.</span>
+  </div>
+  
+  <div class="summary-section">
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-icon icon-students">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <div class="summary-title">Total Students</div>
+        <div class="summary-value">{{ att_list|length }}</div>
+      </div>
+      
+      {% with good_count=0 %}
+        {% for a in att_list %}
+          {% if a.attendance >= 75 %}
+            {% with good_count=good_count|add:1 %}{% endwith %}
+          {% endif %}
+        {% endfor %}
+        <div class="summary-card">
+          <div class="summary-icon icon-present">
+            <i class="fas fa-clipboard-check"></i>
           </div>
-
-
-    {% endblock %}
-
-
-
+          <div class="summary-title">Students with ≥75% Attendance</div>
+          <div class="summary-value">{{ good_count }}</div>
+        </div>
+      {% endwith %}
+      
+      {% with avg_total=0 %}
+        {% for a in att_list %}
+          {% with avg_total=avg_total|add:a.attendance %}{% endwith %}
+        {% endfor %}
+        <div class="summary-card">
+          <div class="summary-icon icon-attendance">
+            <i class="fas fa-percentage"></i>
+          </div>
+          <div class="summary-title">Average Attendance</div>
+          <div class="summary-value">
+            {% if att_list|length > 0 %}
+              {{ avg_total|floatformat:1 }}%
+            {% else %}
+              N/A
+            {% endif %}
+          </div>
+        </div>
+      {% endwith %}
+    </div>
+  </div>
+  
+  <div class="card attendance-card shadow">
+    <div class="card-header">
+      <i class="fas fa-clipboard-list mr-2"></i>
+      Student Attendance Details
+    </div>
+    <div class="card-body">
+      {% if att_list %}
+      <div class="table-responsive">
+        <table class="table attendance-table table-hover">
+          <thead>
+            <tr>
+              <th>USN</th>
+              <th>Student Name</th>
+              <th>Attended Classes</th>
+              <th>Total Classes</th>
+              <th>Attendance %</th>
+              <th>Classes to Attend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in att_list %}
+            <tr>
+              <td class="student-usn">{{ a.student_id }}</td>
+              <td class="student-name">
+                <a href="{% url 't_attendance_detail' a.student.USN a.course_id %}">
+                  {{ a.student.name }}
+                </a>
+              </td>
+              <td>{{ a.att_class }}</td>
+              <td>{{ a.total_class }}</td>
+              {% if a.attendance < 75 %}
+                <td><span class="attendance-badge attendance-bad">{{ a.attendance }}%</span></td>
+              {% else %}
+                <td><span class="attendance-badge attendance-good">{{ a.attendance }}%</span></td>
+              {% endif %}
+              {% if a.classes_to_attend > 0 %}
+                <td><span class="classes-to-attend classes-needed">{{ a.classes_to_attend }} classes needed</span></td>
+              {% else %}
+                <td><span class="classes-to-attend classes-not-needed">No classes needed</span></td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-user-graduate"></i>
+        <p>No students enrolled in this class.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

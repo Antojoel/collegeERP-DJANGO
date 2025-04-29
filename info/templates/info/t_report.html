@@ -1,46 +1,252 @@
 {% extends 'info/base.html' %}
-    {% load static %}
+{% load static %}
 
-    {% block content %}
-                  <div class="card mb-3">
-            <div class="card-header">
-              <i class="fas fa-table"></i>
-            <b>Marks</b></div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                  <thead>
-                    <tr>
-                        <th style="width: 25%">Student USN</th>
-                        <th style="width: 25%">Student Name</th>
-                        <th style="width: 25%">Attendance</th>
-                        <th style="width: 25%">CIE</th>
-                  </thead>
-                  <tbody>
-                    {% for sc in sc_list %}
-                    <tr>
-                        <td>{{ sc.student_id }}</td>
-                        <td>{{ sc.student.name }}</td>
-                        {% if sc.get_attendance < 75 %}
-                            <td class="p-3 mb-2 bg-danger text-white">{{ sc.get_attendance }}</td>
-                        {% else %}
-                            <td class="p-3 mb-2 bg-success text-white">{{ sc.get_attendance }}</td>
-                        {% endif %}
-                        {% if sc.get_cie < 25 %}
-                            <td class="p-3 mb-2 bg-danger text-white">{{ sc.get_cie }}</td>
-                        {% else %}
-                            <td class="p-3 mb-2 bg-success text-white">{{ sc.get_cie }}</td>
-                        {% endif %}
-                    </tr>
-                    {% empty %}
-                            <p>student has no courses</p>
-                    {% endfor %}
+{% block title %}Reports{% endblock %}
 
-                  </tbody>
-                </table>
-              </div>
-            </div>
+{% block css %}
+<style>
+  .reports-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, #36b9cc 0%, #2c9faf 100%);
+    color: white;
+    font-weight: bold;
+    padding: 15px 20px;
+  }
+  
+  .reports-table {
+    margin-bottom: 0;
+  }
+  
+  .reports-table th {
+    background-color: #f8f9fc;
+    color: #5a5c69;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  
+  .student-name {
+    font-weight: 500;
+    font-size: 15px;
+    color: #5a5c69;
+    vertical-align: middle !important;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  
+  .status-good {
+    background-color: #1cc88a;
+    color: white;
+  }
+  
+  .status-bad {
+    background-color: #e74a3b;
+    color: white;
+  }
+  
+  .back-button {
+    margin-bottom: 15px;
+    border-radius: 20px;
+    padding: 5px 15px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #5a5c69;
+  }
+  
+  .empty-state i {
+    font-size: 48px;
+    margin-bottom: 10px;
+    color: #dddfeb;
+  }
+  
+  .report-note {
+    background-color: rgba(54, 185, 204, 0.1);
+    border-left: 4px solid #36b9cc;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    color: #5a5c69;
+  }
+  
+  .report-note i {
+    color: #36b9cc;
+    margin-right: 5px;
+  }
+  
+  .summary-section {
+    margin-bottom: 20px;
+  }
+  
+  .summary-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .summary-card {
+    flex: 1;
+    min-width: 200px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .summary-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+  }
+  
+  .icon-students {
+    background-color: #4e73df;
+  }
+  
+  .icon-attendance {
+    background-color: #1cc88a;
+  }
+  
+  .icon-performance {
+    background-color: #f6c23e;
+  }
+  
+  .summary-title {
+    font-size: 14px;
+    color: #5a5c69;
+    margin-bottom: 5px;
+  }
+  
+  .summary-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #5a5c69;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <a href="javascript:history.back()" class="btn btn-secondary back-button">
+    <i class="fas fa-arrow-left mr-2"></i>Back to Classes
+  </a>
+  
+  <h1 class="h3 mb-4 text-gray-800">Student Performance Report</h1>
+  
+  <div class="report-note">
+    <i class="fas fa-info-circle"></i>
+    <span>This report shows the attendance and continuous internal evaluation (CIE) marks for all students enrolled in this course.</span>
+  </div>
+  
+  <div class="summary-section">
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-icon icon-students">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <div class="summary-title">Total Students</div>
+        <div class="summary-value">{{ sc_list|length }}</div>
+      </div>
+      
+      {% with attendance_count=0 %}
+        {% for sc in sc_list %}
+          {% if sc.get_attendance >= 75 %}
+            {% with attendance_count=attendance_count|add:1 %}{% endwith %}
+          {% endif %}
+        {% endfor %}
+        <div class="summary-card">
+          <div class="summary-icon icon-attendance">
+            <i class="fas fa-clipboard-check"></i>
           </div>
-
-
-    {% endblock %}
+          <div class="summary-title">Students with ≥75% Attendance</div>
+          <div class="summary-value">{{ attendance_count }}</div>
+        </div>
+      {% endwith %}
+      
+      {% with cie_count=0 %}
+        {% for sc in sc_list %}
+          {% if sc.get_cie >= 25 %}
+            {% with cie_count=cie_count|add:1 %}{% endwith %}
+          {% endif %}
+        {% endfor %}
+        <div class="summary-card">
+          <div class="summary-icon icon-performance">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="summary-title">Students with ≥25 CIE Marks</div>
+          <div class="summary-value">{{ cie_count }}</div>
+        </div>
+      {% endwith %}
+    </div>
+  </div>
+  
+  <div class="card reports-card shadow">
+    <div class="card-header">
+      <i class="fas fa-file-alt mr-2"></i>
+      Student Performance Data
+    </div>
+    <div class="card-body">
+      {% if sc_list %}
+      <div class="table-responsive">
+        <table class="table reports-table">
+          <thead>
+            <tr>
+              <th style="width: 20%">Student USN</th>
+              <th style="width: 30%">Student Name</th>
+              <th style="width: 25%">Attendance</th>
+              <th style="width: 25%">CIE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sc in sc_list %}
+            <tr>
+              <td>{{ sc.student_id }}</td>
+              <td class="student-name">{{ sc.student.name }}</td>
+              {% if sc.get_attendance < 75 %}
+                <td><span class="status-badge status-bad">{{ sc.get_attendance }}%</span></td>
+              {% else %}
+                <td><span class="status-badge status-good">{{ sc.get_attendance }}%</span></td>
+              {% endif %}
+              {% if sc.get_cie < 25 %}
+                <td><span class="status-badge status-bad">{{ sc.get_cie }}/50</span></td>
+              {% else %}
+                <td><span class="status-badge status-good">{{ sc.get_cie }}/50</span></td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-file-alt"></i>
+        <p>No students enrolled in this course yet.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

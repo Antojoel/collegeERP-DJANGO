@@ -1,46 +1,337 @@
 {% extends 'info/base.html' %}
-{% block content %}
-{% if c.student_set.all %}
+{% load static %}
 
-<form action="{% url 'marks_confirm' mc.id %}" method="post">
-            {% csrf_token %}
-    <div class="card mb-3">
-        <div class="card-header">
-          <i class="fas fa-table"></i>
-         <b>{{ dept1.name }}</b></div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-              <thead>
-                <tr>
-                    <th>Student Name</th>
-                    <th>Total Marks</th>
-                    <th>Enter Marks</th>
-                </tr>
-              </thead>
-                <tbody>
-                {% for s in c.student_set.all %}
-                    <tr>
-                    <td>{{s.name}}</td>
-                    <td>{{ mc.total_marks }}</td>
-                    <td>
-                        <input type="number" name="{{ s.USN }}" min="0" max="{{ mc.total_marks }}" value="0">
-                    </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-          </div>
+{% block title %}Enter Marks{% endblock %}
+
+{% block css %}
+<style>
+  .marks-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, #1cc88a 0%, #169a6b 100%);
+    color: white;
+    font-weight: bold;
+    padding: 15px 20px;
+  }
+  
+  .marks-table {
+    margin-bottom: 0;
+  }
+  
+  .marks-table th {
+    background-color: #f8f9fc;
+    color: #5a5c69;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  
+  .student-name {
+    font-weight: 500;
+    font-size: 15px;
+    color: #5a5c69;
+    vertical-align: middle !important;
+  }
+  
+  .marks-input {
+    width: 100px;
+    padding: 8px 10px;
+    border: 1px solid #e3e6f0;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .marks-input:focus {
+    border-color: #1cc88a;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25);
+  }
+  
+  .total-marks {
+    font-weight: 600;
+    font-size: 15px;
+    color: #5a5c69;
+    background-color: #f8f9fc;
+    padding: 8px 10px;
+    border-radius: 5px;
+    text-align: center;
+  }
+  
+  .submit-btn {
+    min-width: 150px;
+    border-radius: 50px;
+    padding: 10px 20px;
+    font-weight: 600;
+    margin-top: 20px;
+    background-color: #1cc88a;
+    border-color: #1cc88a;
+    transition: all 0.3s ease;
+  }
+  
+  .submit-btn:hover {
+    background-color: #169a6b;
+    border-color: #169a6b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(22, 154, 107, 0.2);
+  }
+  
+  .back-button {
+    margin-bottom: 15px;
+    border-radius: 20px;
+    padding: 5px 15px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #5a5c69;
+  }
+  
+  .empty-state i {
+    font-size: 48px;
+    margin-bottom: 10px;
+    color: #dddfeb;
+  }
+  
+  .marks-note {
+    background-color: rgba(28, 200, 138, 0.1);
+    border-left: 4px solid #1cc88a;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    color: #5a5c69;
+  }
+  
+  .marks-note i {
+    color: #1cc88a;
+    margin-right: 5px;
+  }
+  
+  .assessment-info {
+    background-color: #f8f9fc;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .assessment-details {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .assessment-name {
+    font-weight: 600;
+    font-size: 18px;
+    color: #1cc88a;
+  }
+  
+  .assessment-course {
+    font-size: 14px;
+    color: #858796;
+  }
+  
+  .max-marks-badge {
+    background-color: #1cc88a;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .max-marks-badge i {
+    margin-right: 5px;
+  }
+  
+  /* Quick actions */
+  .quick-actions {
+    display: flex;
+    margin-bottom: 20px;
+    gap: 10px;
+  }
+  
+  .quick-action-btn {
+    flex: 1;
+    background-color: #f8f9fc;
+    border: 1px solid #e3e6f0;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #5a5c69;
+    font-weight: 500;
+  }
+  
+  .quick-action-btn:hover {
+    background-color: #eaecf4;
+    transform: translateY(-2px);
+  }
+  
+  .quick-action-btn i {
+    font-size: 18px;
+    margin-right: 5px;
+    color: #1cc88a;
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const maxMarks = parseInt(document.getElementById('max-marks').textContent);
+    const marksInputs = document.querySelectorAll('.marks-input');
+    
+    // Validate marks inputs
+    marksInputs.forEach(function(input) {
+      input.addEventListener('input', function() {
+        const value = parseInt(this.value) || 0;
+        if (value < 0) {
+          this.value = 0;
+        } else if (value > maxMarks) {
+          this.value = maxMarks;
+        }
+      });
+    });
+    
+    // Quick action buttons functionality
+    document.getElementById('max-all').addEventListener('click', function() {
+      marksInputs.forEach(function(input) {
+        input.value = maxMarks;
+      });
+    });
+    
+    document.getElementById('clear-all').addEventListener('click', function() {
+      marksInputs.forEach(function(input) {
+        input.value = 0;
+      });
+    });
+    
+    document.getElementById('half-all').addEventListener('click', function() {
+      const halfMarks = Math.floor(maxMarks / 2);
+      marksInputs.forEach(function(input) {
+        input.value = halfMarks;
+      });
+    });
+    
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+      let valid = true;
+      
+      marksInputs.forEach(function(input) {
+        const value = input.value.trim();
+        if (value === '') {
+          valid = false;
+          input.style.borderColor = '#e74a3b';
+        } else {
+          input.style.borderColor = '#e3e6f0';
+        }
+      });
+      
+      if (!valid) {
+        e.preventDefault();
+        alert('Please enter marks for all students.');
+      }
+    });
+  });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <a href="javascript:history.back()" class="btn btn-secondary back-button">
+    <i class="fas fa-arrow-left mr-2"></i>Back to Assessments
+  </a>
+  
+  <div class="assessment-info">
+    <div class="assessment-details">
+      <span class="assessment-name">{{ mc.name }}</span>
+      <span class="assessment-course">Course: {{ ass.course.name }} | Class: {{ ass.class_id }}</span>
+    </div>
+    <div class="max-marks-badge">
+      <i class="fas fa-star"></i>
+      Max Marks: <span id="max-marks">{{ mc.total_marks }}</span>
+    </div>
+  </div>
+  
+  <div class="marks-note">
+    <i class="fas fa-info-circle"></i>
+    <span>Enter marks for each student. Values must be between 0 and {{ mc.total_marks }}.</span>
+  </div>
+  
+  {% if c.student_set.all %}
+  <div class="quick-actions">
+    <div class="quick-action-btn" id="max-all">
+      <i class="fas fa-trophy"></i> Maximum Marks
+    </div>
+    <div class="quick-action-btn" id="half-all">
+      <i class="fas fa-balance-scale"></i> Half Marks
+    </div>
+    <div class="quick-action-btn" id="clear-all">
+      <i class="fas fa-eraser"></i> Clear All
+    </div>
+  </div>
+  
+  <form action="{% url 'marks_confirm' mc.id %}" method="post">
+    {% csrf_token %}
+    <div class="card marks-card shadow">
+      <div class="card-header">
+        <i class="fas fa-edit mr-2"></i>
+        Enter {{ mc.name }} Marks
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table marks-table">
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Maximum Marks</th>
+                <th>Enter Marks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in c.student_set.all %}
+              <tr>
+                <td class="student-name">{{ s.name }}</td>
+                <td>
+                  <div class="total-marks">{{ mc.total_marks }}</div>
+                </td>
+                <td>
+                  <input type="number" name="{{ s.USN }}" min="0" max="{{ mc.total_marks }}" value="0" class="marks-input" required>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </div>
-
-
-    <input class="btn btn-success" type="submit" value="Submit">
-</form>
-
-
-{% else %}
-    <p>No students in Class</p>
-{% endif %}
-
+    </div>
+    
+    <div class="text-center">
+      <button type="submit" class="btn btn-success submit-btn">
+        <i class="fas fa-save mr-2"></i> Submit Marks
+      </button>
+    </div>
+  </form>
+  
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-user-graduate"></i>
+    <p>No students enrolled in this class.</p>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}

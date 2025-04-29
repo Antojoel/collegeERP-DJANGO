@@ -1,44 +1,209 @@
 {% extends 'info/base.html' %}
-    {% load static %}
+{% load static %}
 
-    {% block content %}
-                  <div class="card mb-3">
-            <div class="card-header">
-              <i class="fas fa-table"></i>
-            <b>Marks</b></div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                  <thead>
-                    <tr>
-                        <th>Course ID</th>
-                        <th>Course name</th>
-                        <th>Internals 1</th>
-                        <th>Internals 2</th>
-                        <th>Internals 3</th>
-                        <th>Event 1</th>
-                        <th>Event 2</th>
-                        <th>SEE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for sc in sc_list %}
-                    <tr>
-                        <td>{{ sc.course_id }}</td>
-                        <td>{{sc.course.name}}</td>
-                        {% for m in sc.marks_set.all %}
-                            <td>{{ m.marks1 }}</td>
-                        {% endfor %}
-                    </tr>
-                    {% empty %}
-                            <p>student has no courses</p>
-                    {% endfor %}
+{% block title %}Marks{% endblock %}
 
-                  </tbody>
-                </table>
-              </div>
-            </div>
+{% block css %}
+<style>
+  .marks-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    transition: transform 0.3s ease;
+  }
+  
+  .marks-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, #36b9cc 0%, #1a8997 100%);
+    color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    font-weight: bold;
+  }
+  
+  .table th {
+    background-color: #f8f9fc;
+    color: #5a5c69;
+    font-weight: 600;
+    border-bottom: 2px solid #e3e6f0;
+  }
+  
+  .marks-badge {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .marks-high {
+    background-color: #1cc88a;
+    color: white;
+  }
+  
+  .marks-medium {
+    background-color: #f6c23e;
+    color: white;
+  }
+  
+  .marks-low {
+    background-color: #e74a3b;
+    color: white;
+  }
+  
+  .course-name {
+    font-weight: 600;
+    color: #4e73df;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #5a5c69;
+  }
+  
+  .empty-state i {
+    font-size: 48px;
+    margin-bottom: 10px;
+    color: #dddfeb;
+  }
+  
+  .summary-section {
+    margin-bottom: 20px;
+  }
+  
+  .summary-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .summary-card {
+    flex: 1;
+    min-width: 200px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .summary-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+  }
+  
+  .icon-internals {
+    background-color: #4e73df;
+  }
+  
+  .icon-events {
+    background-color: #1cc88a;
+  }
+  
+  .icon-finals {
+    background-color: #e74a3b;
+  }
+  
+  .summary-title {
+    font-size: 14px;
+    color: #5a5c69;
+    margin-bottom: 5px;
+  }
+  
+  .summary-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #5a5c69;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="h3 mb-4 text-gray-800">Academic Performance</h1>
+  
+  <div class="row">
+    <div class="col-12">
+      <div class="card marks-card shadow">
+        <div class="card-header">
+          <i class="fas fa-graduation-cap mr-2"></i>
+          Course Marks
+        </div>
+        <div class="card-body">
+          {% if sc_list %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Course ID</th>
+                  <th>Course Name</th>
+                  <th>Internal 1</th>
+                  <th>Internal 2</th>
+                  <th>Internal 3</th>
+                  <th>Event 1</th>
+                  <th>Event 2</th>
+                  <th>SEE</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for sc in sc_list %}
+                <tr>
+                  <td>{{ sc.course_id }}</td>
+                  <td class="course-name">{{ sc.course.name }}</td>
+                  {% for m in sc.marks_set.all %}
+                    {% if forloop.counter <= 3 %}
+                      {% if m.marks1 >= 15 %}
+                        <td><span class="marks-badge marks-high">{{ m.marks1 }}</span></td>
+                      {% elif m.marks1 >= 10 %}
+                        <td><span class="marks-badge marks-medium">{{ m.marks1 }}</span></td>
+                      {% else %}
+                        <td><span class="marks-badge marks-low">{{ m.marks1 }}</span></td>
+                      {% endif %}
+                    {% elif forloop.counter <= 5 %}
+                      {% if m.marks1 >= 15 %}
+                        <td><span class="marks-badge marks-high">{{ m.marks1 }}</span></td>
+                      {% elif m.marks1 >= 10 %}
+                        <td><span class="marks-badge marks-medium">{{ m.marks1 }}</span></td>
+                      {% else %}
+                        <td><span class="marks-badge marks-low">{{ m.marks1 }}</span></td>
+                      {% endif %}
+                    {% else %}
+                      {% if m.marks1 >= 70 %}
+                        <td><span class="marks-badge marks-high">{{ m.marks1 }}</span></td>
+                      {% elif m.marks1 >= 40 %}
+                        <td><span class="marks-badge marks-medium">{{ m.marks1 }}</span></td>
+                      {% else %}
+                        <td><span class="marks-badge marks-low">{{ m.marks1 }}</span></td>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
-
-
-    {% endblock %}
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-file-alt"></i>
+            <p>No marks have been recorded for any of your courses yet.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

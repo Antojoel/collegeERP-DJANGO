@@ -1,42 +1,218 @@
 {% extends 'info/base.html' %}
+{% load static %}
+
+{% block title %}Marks List{% endblock %}
+
+{% block css %}
+<style>
+  .marks-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, #1cc88a 0%, #169a6b 100%);
+    color: white;
+    font-weight: bold;
+    padding: 15px 20px;
+  }
+  
+  .marks-table {
+    margin-bottom: 0;
+  }
+  
+  .marks-table th {
+    background-color: #f8f9fc;
+    color: #5a5c69;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  
+  .exam-name {
+    font-weight: 500;
+    font-size: 15px;
+    color: #5a5c69;
+    vertical-align: middle !important;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  
+  .status-not-marked {
+    background-color: #e74a3b;
+    color: white;
+  }
+  
+  .status-marked {
+    background-color: #1cc88a;
+    color: white;
+  }
+  
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  
+  .action-btn {
+    border-radius: 50px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: none;
+    transition: all 0.3s ease;
+  }
+  
+  .action-btn:hover {
+    transform: translateY(-2px);
+  }
+  
+  .btn-enter {
+    background-color: #1cc88a;
+    border-color: #1cc88a;
+    color: white;
+  }
+  
+  .btn-enter:hover {
+    background-color: #169a6b;
+    border-color: #169a6b;
+  }
+  
+  .btn-edit {
+    background-color: #f6c23e;
+    border-color: #f6c23e;
+    color: #fff;
+  }
+  
+  .btn-edit:hover {
+    background-color: #dda20a;
+    border-color: #dda20a;
+    color: #fff;
+  }
+  
+  .back-button {
+    margin-bottom: 15px;
+    border-radius: 20px;
+    padding: 5px 15px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #5a5c69;
+  }
+  
+  .empty-state i {
+    font-size: 48px;
+    margin-bottom: 10px;
+    color: #dddfeb;
+  }
+  
+  .marks-note {
+    background-color: rgba(28, 200, 138, 0.1);
+    border-left: 4px solid #1cc88a;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    color: #5a5c69;
+  }
+  
+  .marks-note i {
+    color: #1cc88a;
+    margin-right: 5px;
+  }
+  
+  /* Animation for status changes */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .animated-row {
+    animation: fadeIn 0.5s ease-out;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-    <div class="card mb-3">
-        <div class="card-header">
-              <i class="fas fa-table"></i>
-            <b>Attendance</b></div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                  <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for m in m_list %}
-                    <tr>
-                        <td>{{ m.name }}</td>
-                        {% if not m.status %}
-                            <td class="p-3 mb-2 bg-danger text-white">Not Marked</td>
-                            <td>
-                                <a class="btn btn-primary" href="{% url 't_marks_entry' m.id %}" role="button">Enter Marks</a>
-                            </td>
-
-                        {% else %}
-                            <td class="p-3 mb-2 bg-success text-white">Marked</td>
-                            <td><a class="btn btn-warning" href="{% url 'edit_marks' m.id %}" role="button">Edit Marks</a> </td>
-                        {% endif %}
-                    </tr>
-                    {% empty %}
-                            <p>student has no courses</p>
-                    {% endfor %}
-
-                  </tbody>
-                </table>
-              </div>
-        </div>
+<div class="container-fluid">
+  <a href="javascript:history.back()" class="btn btn-secondary back-button">
+    <i class="fas fa-arrow-left mr-2"></i>Back to Classes
+  </a>
+  
+  <h1 class="h3 mb-4 text-gray-800">Marks Management</h1>
+  
+  <div class="marks-note">
+    <i class="fas fa-info-circle"></i>
+    <span>This page shows all assessment components for the course. Enter marks for each assessment or edit existing ones.</span>
+  </div>
+  
+  <div class="card marks-card shadow">
+    <div class="card-header">
+      <i class="fas fa-clipboard-list mr-2"></i>
+      Assessments List
     </div>
+    <div class="card-body">
+      {% if m_list %}
+      <div class="table-responsive">
+        <table class="table marks-table">
+          <thead>
+            <tr>
+              <th width="50%">Assessment Name</th>
+              <th width="20%">Status</th>
+              <th width="30%">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in m_list %}
+            <tr class="{% if forloop.first %}animated-row{% endif %}">
+              <td class="exam-name">{{ m.name }}</td>
+              {% if not m.status %}
+                <td>
+                  <span class="status-badge status-not-marked">
+                    <i class="fas fa-times-circle mr-1"></i> Not Marked
+                  </span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a class="btn btn-primary action-btn btn-enter" href="{% url 't_marks_entry' m.id %}">
+                      <i class="fas fa-edit mr-1"></i> Enter Marks
+                    </a>
+                  </div>
+                </td>
+              {% else %}
+                <td>
+                  <span class="status-badge status-marked">
+                    <i class="fas fa-check-circle mr-1"></i> Marked
+                  </span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a class="btn btn-warning action-btn btn-edit" href="{% url 'edit_marks' m.id %}">
+                      <i class="fas fa-pencil-alt mr-1"></i> Edit Marks
+                    </a>
+                  </div>
+                </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-clipboard"></i>
+        <p>No assessments configured for this course.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
 {% endblock %}

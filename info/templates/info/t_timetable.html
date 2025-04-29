@@ -1,61 +1,356 @@
 {% extends 'info/base.html' %}
+{% load static %}
 
-    {% block content %}
-    <div class="container">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-12">
-                    <h2 class="text-center">
-                        Timetable
-                    </h2>
-                </div>
-                <div id="no-more-tables">
-                     <div class="table-responsive">
-                        <table class="col-sm-12 table table-bordered table-striped table- cf " id="dataTable" width="100%" cellspacing="0">
-                            <thead class="cf">
-                                <tr>
-                                    <th>      </th>
-                                    <th>7:30 - 8:30</th>
-                                    <th>8:30 - 9:30</th>
-                                    <th>9:30 - 10:30</th>
-                                    <th>Break</th>
-                                    <th>11:00 - 11:50</th>
-                                    <th>11:50 - 12:40</th>
-                                    <th>12:40 - 1:30</th>
-                                    <th>Lunch</th>
-                                    <th>2:30 - 3:30</th>
-                                    <th>3:30 - 4:30</th>
-                                    <th>4:30 - 5:30</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for i in class_matrix %}
-                                <tr>
-                                    {% for j in i %}
-                                        {% if forloop.counter == 1 %}
-                                            <td><b>{{ j }}</b></td>
-                                        {% elif j == True %}
-                                            <td></td>
-                                        {% else %}
-    {#                                        <td><a href="{% url 'free_teachers' j.id %}" >{{ j.assign.class_id_id }} {{ j.assign.course.shortname }}</a> </td>#}
-                                            <td><a href="{% url 'free_teachers' j.id %}"
-                                                    onclick="window.open('{% url 'free_teachers' j.id %}',
-                                                                         'newwindow',
-                                                                         'width=600,height=400');
-                                                              return false;">{{ j.assign.class_id_id }} {{ j.assign.course.shortname }}</a>
-                                            </td>
-                                        {% endif %}
-                                    {% endfor %}
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                     </div>
-                </div>
-            </div>
+{% block title %}Timetable{% endblock %}
+
+{% block css %}
+<style>
+  .timetable-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, #f6c23e 0%, #e0a800 100%);
+    color: white;
+    font-weight: bold;
+    padding: 15px 20px;
+  }
+  
+  .timetable-table {
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .timetable-table th, 
+  .timetable-table td {
+    border: 1px solid #e3e6f0;
+    padding: 12px 15px;
+    text-align: center;
+    font-size: 14px;
+  }
+  
+  .timetable-table thead th {
+    background-color: #f8f9fc;
+    color: #5a5c69;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .timetable-table tbody th {
+    background-color: #f8f9fc;
+    color: #5a5c69;
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+  }
+  
+  .day-column {
+    width: 100px;
+    background-color: #f8f9fc;
+    font-weight: bold;
+  }
+  
+  .lunch-break, .break-column {
+    background-color: #f8f9fa;
+    color: #858796;
+    font-style: italic;
+  }
+  
+  .course-cell {
+    font-weight: 500;
+    background-color: rgba(78, 115, 223, 0.1);
+    color: #4e73df;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .course-cell:hover {
+    background-color: rgba(78, 115, 223, 0.2);
+    transform: scale(1.02);
+  }
+  
+  .course-cell a {
+    display: block;
+    padding: 8px;
+    text-decoration: none;
+    color: #4e73df;
+    font-weight: 600;
+  }
+  
+  .course-cell a:hover {
+    text-decoration: none;
+  }
+  
+  .empty-slot {
+    color: #b7b9cc;
+  }
+  
+  .timetable-legend {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fc;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+    margin-right: 20px;
+  }
+  
+  .legend-color {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    border-radius: 4px;
+  }
+  
+  .legend-course {
+    background-color: rgba(78, 115, 223, 0.1);
+    border: 1px solid rgba(78, 115, 223, 0.3);
+  }
+  
+  .legend-break {
+    background-color: #f8f9fa;
+    border: 1px solid #e3e6f0;
+  }
+  
+  .summary-section {
+    margin-bottom: 20px;
+  }
+  
+  .summary-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .summary-card {
+    flex: 1;
+    min-width: 200px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .summary-icon {
+    font-size: 24px;
+    margin-bottom: 10px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+  }
+  
+  .icon-classes {
+    background-color: #4e73df;
+  }
+  
+  .icon-hours {
+    background-color: #1cc88a;
+  }
+  
+  .icon-days {
+    background-color: #f6c23e;
+  }
+  
+  .summary-title {
+    font-size: 14px;
+    color: #5a5c69;
+    margin-bottom: 5px;
+  }
+  
+  .summary-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #5a5c69;
+  }
+
+  /* Popup for free teachers list */
+  .free-teachers-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .popup-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e3e6f0;
+  }
+  
+  .popup-title {
+    font-weight: 600;
+    font-size: 18px;
+    color: #4e73df;
+  }
+  
+  .close-popup {
+    cursor: pointer;
+    font-size: 20px;
+    color: #5a5c69;
+  }
+  
+  .free-teachers-list {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="h3 mb-4 text-gray-800">Your Teaching Schedule</h1>
+  
+  <div class="summary-section">
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-icon icon-classes">
+          <i class="fas fa-chalkboard-teacher"></i>
         </div>
-
-
+        <div class="summary-title">Total Classes</div>
+        <div class="summary-value">
+          {% with count=0 %}
+            {% for row in class_matrix %}
+              {% for cell in row %}
+                {% if cell != True and forloop.counter != 1 and forloop.counter != 5 and forloop.counter != 9 %}
+                  {% with count=count|add:1 %}{% endwith %}
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+            {{ count }}
+          {% endwith %}
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <div class="summary-icon icon-hours">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="summary-title">Weekly Hours</div>
+        <div class="summary-value">
+          {% with count=0 %}
+            {% for row in class_matrix %}
+              {% for cell in row %}
+                {% if cell != True and forloop.counter != 1 and forloop.counter != 5 and forloop.counter != 9 %}
+                  {% with count=count|add:1 %}{% endwith %}
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+            {{ count }}
+          {% endwith %}
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <div class="summary-icon icon-days">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="summary-title">Working Days</div>
+        <div class="summary-value">6</div>
+      </div>
     </div>
-
-    {% endblock %}
+  </div>
+  
+  <div class="card timetable-card shadow">
+    <div class="card-header">
+      <i class="fas fa-calendar-alt mr-2"></i>
+      Weekly Teaching Schedule
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table timetable-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>7:30 - 8:30</th>
+              <th>8:30 - 9:30</th>
+              <th>9:30 - 10:30</th>
+              <th class="break-column">Break</th>
+              <th>11:00 - 11:50</th>
+              <th>11:50 - 12:40</th>
+              <th>12:40 - 1:30</th>
+              <th class="lunch-break">Lunch</th>
+              <th>2:30 - 3:30</th>
+              <th>3:30 - 4:30</th>
+              <th>4:30 - 5:30</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in class_matrix %}
+            <tr>
+              {% for j in i %}
+                {% if forloop.counter == 1 %}
+                  <th class="day-column">{{ j }}</th>
+                {% elif forloop.counter == 5 or forloop.counter == 9 %}
+                  <td class="{% if forloop.counter == 5 %}break-column{% else %}lunch-break{% endif %}"></td>
+                {% else %}
+                  {% if j == True %}
+                    <td class="empty-slot">-</td>
+                  {% else %}
+                    <td class="course-cell">
+                      <a href="{% url 'free_teachers' j.id %}" onclick="window.open('{% url 'free_teachers' j.id %}', 'newwindow', 'width=400,height=400'); return false;">
+                        {{ j.assign.class_id_id }} {{ j.assign.course.shortname }}
+                      </a>
+                    </td>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <div class="timetable-legend">
+    <div class="legend-item">
+      <div class="legend-color legend-course"></div>
+      <span>Course</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color legend-break"></div>
+      <span>Break Time</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
